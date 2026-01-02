@@ -92,46 +92,58 @@
                 // 重要：請在此處填入您的 Google Sheets CSV 發佈網址
                 const GS_CSV_URL = "YOUR_CSV_URL_HERE";
 
-                const syncFromGoogleSheets = async () => {
-                    if (GS_CSV_URL.includes("https://docs.google.com/spreadsheets/d/e/2PACX-1vQw1fgQ6b160ZSRvuxYjABLBbEkLtrpd1vYXS7ETPEl_Xsh_aew-lVh6UYGb0QOREvg4pSHZw58xcxy/pub?output=csv")) {
-                        alert("請先在程式碼中填入您的 Google Sheets CSV 網址");
-                        return;
-                    }
-                    isLoading.value = true;
-                    try {
-                        const res = await fetch(GS_CSV_URL + '&cache_bust=' + Date.now());
-                        const text = await res.text();
-                        const rows = text.split('\n').slice(1); // 跳過標題列
-                        
-                        const priceMap = {};
-                        rows.forEach(row => {
-                            const cols = row.split(',');
-                            if (cols.length >= 2) {
-                                // 處理 TPE:0050 -> 0050
-                                const sym = cols[0].replace("TPE:", "").replace(/"/g, "").trim();
-                                const price = parseFloat(cols[1]);
-                                if (sym && !isNaN(price)) priceMap[sym] = price;
-                            }
-                        });
+const syncFromGoogleSheets = async () => {
+    if (GS_CSV_URL.includes("YOUR_CSV_URL_HERE")) return;
+    isLoading.value = true;
+    try {
+        const res = await fetch(GS_CSV_URL + '&t=' + Date.now());
+        const text = await res.text();
+        
+        // Debug 用：這會在瀏覽器開發者工具顯示你抓到的原始資料
+        console.log("Raw CSV Data:", text);
 
-                        // 更新資料庫中的價格
-                        db.value.assets = db.value.assets.map(asset => {
-                            if (asset.type === 'stock_tw' && priceMap[asset.symbol]) {
-                                return {
-                                    ...asset,
-                                    currentPrice: priceMap[asset.symbol],
-                                    value: priceMap[asset.symbol] * asset.shares
-                                };
-                            }
-                            return asset;
-                        });
-                        console.log("價格更新成功", priceMap);
-                    } catch (e) {
-                        alert("同步失敗，請確認 Google Sheets 是否已發佈為 CSV");
-                    } finally {
-                        isLoading.value = false;
-                    }
+        const rows = text.split(/\r?\n/).slice(1); // 兼容 Windows/Mac 換行符
+        const priceMap = {};
+
+        rows.forEach(row => {
+            // 使用正則表達式處理可能帶有引號的 CSV
+            const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+            if (cols.length >= 2) {
+                let sym = cols[0].replace(/"/g, "").trim();
+                // 移除 Google 可能帶有的 TPE: 前綴
+                sym = sym.replace("TPE:", ""); 
+                const price = parseFloat(cols[1].replace(/"/g, "").replace(/,/g, ""));
+                
+                if (sym && !isNaN(price)) {
+                    priceMap[sym] = price;
+                }
+            }
+        });
+
+        console.log("Parsed Price Map:", priceMap);
+
+        // 更新資產
+        db.value.assets = db.value.assets.map(asset => {
+            if (asset.type === 'stock_tw' && priceMap[asset.symbol]) {
+                return {
+                    ...asset,
+                    currentPrice: priceMap[asset.symbol],
+                    value: priceMap[asset.symbol] * asset.shares
                 };
+            }
+            return asset;
+        });
+        
+        // 如果成功更新了，給個小提示
+        if (Object.keys(priceMap).length > 0) {
+            console.log("Sync Complete!");
+        }
+    } catch (e) {
+        console.error("Sync Error:", e);
+    } finally {
+        isLoading.value = false;
+    }
+};
 
                 const addManualStock = () => {
                     if (!newItem.value.symbol || !newItem.value.shares) return;
