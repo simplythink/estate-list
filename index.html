@@ -224,24 +224,38 @@
                 };
                 let twseCache = null;
 
-                const fetchAllTWData = async () => {
-                    if (twseCache) return twseCache;
-                    try {
-                        const [sRes, eRes] = await Promise.all([fetch(ENDPOINTS.STOCK), fetch(ENDPOINTS.ETF)]);
-                        const sData = await sRes.json();
-                        const eData = await eRes.json();
-                        
-                        // 合併並標準化資料 (處理 Code/ID 名稱不一與數值逗號)
-                        twseCache = [...sData, ...eData].map(i => ({
-                            code: (i.Code || i.ID || i.item || "").trim(),
-                            name: i.Name || i.ItemName || i.item_name,
-                            price: parseFloat(String(i.ClosingPrice || i.TradePrice || "0").replace(/,/g, ''))
-                        }));
-                        return twseCache;
-                    } catch (e) {
-                        throw new Error("連線至證交所失敗，請檢查網路。");
-                    }
-                };
+const fetchAllTWData = async () => {
+    if (twseCache) return twseCache;
+
+    // 使用 AllOrigins 代理服務來繞過 CORS 限制
+    const wrapUrl = (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+
+    try {
+        // 我們改用 wrapUrl 包裹原始網址
+        const [sRes, eRes] = await Promise.all([
+            fetch(wrapUrl(ENDPOINTS.STOCK)),
+            fetch(wrapUrl(ENDPOINTS.ETF))
+        ]);
+
+        const sDataRaw = await sRes.json();
+        const eDataRaw = await eRes.json();
+
+        // AllOrigins 會把結果包在 .contents 字串中，需要再 parse 一次
+        const sData = JSON.parse(sDataRaw.contents);
+        const eData = JSON.parse(eDataRaw.contents);
+        
+        twseCache = [...sData, ...eData].map(i => ({
+            code: (i.Code || i.ID || i.item || "").trim(),
+            name: i.Name || i.ItemName || i.item_name,
+            price: parseFloat(String(i.ClosingPrice || i.TradePrice || "0").replace(/,/g, ''))
+        }));
+
+        return twseCache;
+    } catch (e) {
+        console.error("Fetch Error:", e);
+        throw new Error("證交所拒絕連線或 API 維護中。建議稍後再試，或使用代理伺服器。");
+    }
+};
 
                 const addTWStock = async () => {
                     const sym = newItem.value.symbol?.trim();
