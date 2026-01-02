@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PureWealth Pro | 智慧搜尋版</title>
+    <title>PureWealth Pro | 穩定連線版</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -22,32 +22,37 @@
                 <button v-if="subView" @click="closeSubView" class="mr-3 text-indigo-600">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
                 </button>
-                <h1 class="text-xl font-black text-indigo-600">{{ subView ? typeMap[subView] : 'PureWealth' }}</h1>
+                <h1 class="text-xl font-black text-indigo-600 tracking-tight">PureWealth Pro</h1>
             </div>
-            <button v-if="!subView" @click="syncAllStockPrices" class="p-2 bg-indigo-50 text-indigo-600 rounded-full">
-                <div v-if="isLoading" class="loading-ring w-4 h-4"></div>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
-            </button>
+            <div v-if="isLoading" class="loading-ring w-5 h-5"></div>
         </header>
 
         <main class="flex-1 p-6">
-            <div v-if="!subView">
-                <div v-for="(name, type) in typeMap" :key="type" @click="subView = type" class="mb-3 bg-white p-5 rounded-3xl border flex justify-between items-center cursor-pointer active:scale-95 transition-all">
-                    <span class="font-bold text-slate-700">{{ name }}</span>
+            <div v-if="!subView" class="space-y-4">
+                <div class="bg-indigo-600 rounded-[2rem] p-7 text-white shadow-xl mb-6">
+                    <p class="text-indigo-200 text-[10px] font-bold uppercase tracking-widest">Total Net Worth</p>
+                    <h2 class="text-4xl font-black">${{ formatNumber(netWorth) }}</h2>
+                </div>
+                
+                <div v-for="(name, type) in typeMap" :key="type" @click="subView = type" class="bg-white p-5 rounded-3xl border flex justify-between items-center cursor-pointer active:bg-slate-50 transition-all">
+                    <div>
+                        <p class="font-bold text-slate-800">{{ name }}</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">{{ getGroupItems(type).length }} Items</p>
+                    </div>
                     <span class="font-black text-indigo-600">${{ formatNumber(getGroupTotal(type)) }}</span>
                 </div>
             </div>
 
             <div v-if="subView === 'stock_tw'" class="space-y-6">
                 <div class="bg-indigo-50/50 p-5 rounded-3xl border border-indigo-100 relative">
-                    <div class="mb-4">
-                        <label class="text-[10px] font-black text-indigo-400 uppercase ml-1">股票代號或名稱</label>
-                        <input v-model="searchQuery" @input="showDropdown = true" placeholder="輸入 2330 或 台積電..." class="w-full bg-white border-0 p-4 rounded-2xl text-sm font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 mt-1">
+                    <div class="mb-4 relative">
+                        <label class="text-[10px] font-black text-indigo-400 uppercase ml-1">搜尋代號或名稱</label>
+                        <input v-model="searchQuery" @input="showDropdown = true" placeholder="例：0050 或 台積電" class="w-full bg-white border-0 p-4 rounded-2xl text-sm font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 mt-1">
                         
-                        <div v-if="showDropdown && filteredStocks.length > 0" class="absolute left-5 right-5 z-50 bg-white border shadow-xl rounded-2xl mt-1 max-h-48 overflow-y-auto custom-scrollbar">
+                        <div v-if="showDropdown && filteredStocks.length > 0" class="absolute left-0 right-0 z-50 bg-white border shadow-xl rounded-2xl mt-1 max-h-48 overflow-y-auto custom-scrollbar">
                             <div v-for="s in filteredStocks" :key="s.id" @click="selectStock(s)" class="p-4 hover:bg-indigo-50 border-b last:border-0 cursor-pointer flex justify-between items-center">
                                 <span class="font-bold text-slate-700">{{ s.id }} {{ s.name }}</span>
-                                <span class="text-xs text-slate-400">${{ s.price }}</span>
+                                <span class="text-xs text-slate-400 font-bold">${{ s.price }}</span>
                             </div>
                         </div>
                     </div>
@@ -58,12 +63,13 @@
                             <input v-model.number="newItem.shares" type="number" placeholder="數量" class="w-full bg-white border-0 p-4 rounded-2xl text-sm font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 mt-1">
                         </div>
                         <div>
-                            <label class="text-[10px] font-black text-slate-400 uppercase ml-1">成本價 (選填)</label>
-                            <input v-model.number="newItem.cost" type="number" placeholder="買入單價" class="w-full bg-white border-0 p-4 rounded-2xl text-sm font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 mt-1">
+                            <label class="text-[10px] font-black text-slate-400 uppercase ml-1">買入成本 (選填)</label>
+                            <input v-model.number="newItem.cost" type="number" placeholder="單價" class="w-full bg-white border-0 p-4 rounded-2xl text-sm font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 mt-1">
                         </div>
                     </div>
 
-                    <button @click="saveTWStock" class="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all">新增至投資組合</button>
+                    <button @click="saveTWStock" class="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all">新增資產</button>
+                    <p class="text-[10px] text-center text-slate-400 mt-3">若搜尋不到，可直接輸入代號後點選新增</p>
                 </div>
 
                 <div class="space-y-3">
@@ -72,21 +78,20 @@
                             <h4 class="font-black text-slate-800">{{ item.symbol }} {{ item.name }}</h4>
                             <p class="text-[11px] font-bold text-slate-400 mt-0.5">
                                 {{ formatNumber(item.shares) }} 股 • 現價 ${{ item.currentPrice }}
-                                <span v-if="item.cost" class="ml-2 px-1.5 py-0.5 rounded bg-slate-100">成本 ${{ item.cost }}</span>
                             </p>
                         </div>
-                        <div class="text-right">
-                            <div class="font-black text-slate-800">${{ formatNumber(item.value) }}</div>
-                            <div v-if="item.cost" :class="getProfit(item) >= 0 ? 'text-emerald-500' : 'text-rose-500'" class="text-[10px] font-black mt-1">
-                                {{ getProfit(item) >= 0 ? '▲' : '▼' }} {{ formatNumber(Math.abs(getProfit(item))) }} ({{ getProfitPct(item) }}%)
+                        <div class="text-right flex items-center gap-3">
+                            <div>
+                                <div class="font-black text-slate-800">${{ formatNumber(item.value) }}</div>
+                                <div v-if="item.cost" :class="getProfit(item) >= 0 ? 'text-emerald-500' : 'text-rose-500'" class="text-[10px] font-black">
+                                    {{ getProfitPct(item) }}%
+                                </div>
                             </div>
+                            <button @click="removeItem(item.id)" class="text-slate-200 hover:text-rose-500 transition-colors">✕</button>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <div v-if="subView && subView !== 'stock_tw'">
-                </div>
         </main>
     </div>
 
@@ -95,45 +100,62 @@
 
         createApp({
             setup() {
-                const view = ref('assets');
                 const subView = ref(null);
                 const isLoading = ref(false);
-                const db = ref({ assets: [], ledger: [] });
-                const newItem = ref({ symbol: '', shares: null, name: '', value: null, cost: null });
+                const db = ref({ assets: [] });
+                const newItem = ref({ symbol: '', shares: null, name: '', cost: null, currentPrice: 0 });
                 
-                // 智慧搜尋相關
                 const searchQuery = ref('');
                 const showDropdown = ref(false);
-                const allStockMaster = ref([]); // 快取所有股票清單
+                const allStockMaster = ref([]);
 
                 const typeMap = { cash: '儲蓄與現金', stock_tw: '台股投資', stock_us: '美股證券', loan: '債務借貸' };
 
-                // 代理抓取
-                const proxyUrl = (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-                
+                // 核心連線邏輯：雙代理切換
+                const fetchWithFallback = async (url) => {
+                    const proxies = [
+                        (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+                        (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`
+                    ];
+
+                    for (let proxyFn of proxies) {
+                        try {
+                            const response = await fetch(proxyFn(url));
+                            const data = await response.json();
+                            // 解析不同的代理回傳格式
+                            return typeof data.contents === 'string' ? JSON.parse(data.contents) : (data.contents || data);
+                        } catch (e) {
+                            console.warn(`Proxy failed, trying next...`);
+                        }
+                    }
+                    throw new Error("所有連線代理均失效");
+                };
+
                 const fetchMasterData = async () => {
                     if (allStockMaster.value.length > 0) return;
                     isLoading.value = true;
                     try {
-                        const [sRes, eRes] = await Promise.all([
-                            fetch(proxyUrl('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL')).then(r => r.json()),
-                            fetch(proxyUrl('https://openapi.twse.com.tw/v1/exchangeReport/ETF_DAY_ALL')).then(r => r.json())
+                        const [stocks, etfs] = await Promise.all([
+                            fetchWithFallback('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL'),
+                            fetchWithFallback('https://openapi.twse.com.tw/v1/exchangeReport/ETF_DAY_ALL')
                         ]);
-                        const stocks = JSON.parse(sRes.contents);
-                        const etfs = JSON.parse(eRes.contents);
+                        
                         allStockMaster.value = [...stocks, ...etfs].map(i => ({
                             id: (i.Code || i.ID || "").trim(),
                             name: i.Name || i.ItemName || "",
                             price: parseFloat(String(i.ClosingPrice || i.TradePrice || "0").replace(/,/g, ''))
                         }));
-                    } catch (e) { console.error("資料加載失敗"); }
-                    finally { isLoading.value = false; }
+                    } catch (e) {
+                        alert("自動抓取失敗，您可以直接在下方輸入並手動建立。");
+                    } finally {
+                        isLoading.value = false;
+                    }
                 };
 
                 const filteredStocks = computed(() => {
                     const q = searchQuery.value.trim().toUpperCase();
-                    if (!q) return [];
-                    return allStockMaster.value.filter(s => s.id.includes(q) || s.name.includes(q)).slice(0, 10);
+                    if (!q || q.length < 2) return [];
+                    return allStockMaster.value.filter(s => s.id.includes(q) || s.name.includes(q)).slice(0, 8);
                 });
 
                 const selectStock = (stock) => {
@@ -145,7 +167,20 @@
                 };
 
                 const saveTWStock = () => {
-                    if (!newItem.value.symbol || !newItem.value.shares) return alert("請選擇股票並輸入股數");
+                    // 如果搜尋不到（API 失敗），允許手動輸入
+                    if (!newItem.value.symbol) {
+                        const manualSymbol = searchQuery.value.trim();
+                        if (!manualSymbol) return alert("請輸入股票代號");
+                        const manualPrice = prompt(`自動抓取失敗，請輸入 [${manualSymbol}] 的目前單價：`, "100");
+                        if (!manualPrice) return;
+                        
+                        newItem.value.symbol = manualSymbol;
+                        newItem.value.name = "手動新增標的";
+                        newItem.value.currentPrice = parseFloat(manualPrice);
+                    }
+
+                    if (!newItem.value.shares) return alert("請輸入股數");
+
                     db.value.assets.unshift({
                         id: Date.now(),
                         type: 'stock_tw',
@@ -156,33 +191,33 @@
                         currentPrice: newItem.value.currentPrice,
                         value: newItem.value.currentPrice * newItem.value.shares
                     });
+                    
                     searchQuery.value = '';
-                    newItem.value = { symbol: '', shares: null, name: '', value: null, cost: null };
+                    newItem.value = { symbol: '', shares: null, name: '', cost: null, currentPrice: 0 };
                 };
 
-                // 損益計算
                 const getProfit = (item) => item.cost ? (item.currentPrice - item.cost) * item.shares : 0;
                 const getProfitPct = (item) => item.cost ? ((item.currentPrice - item.cost) / item.cost * 100).toFixed(2) : 0;
-
                 const getGroupItems = (t) => db.value.assets.filter(i => i.type === t);
                 const getGroupTotal = (t) => getGroupItems(t).reduce((s, i) => s + i.value, 0);
+                const netWorth = computed(() => db.value.assets.reduce((s, i) => s + (i.type === 'loan' ? -i.value : i.value), 0));
                 const formatNumber = (n) => new Intl.NumberFormat().format(Math.round(n || 0));
-
+                const removeItem = (id) => db.value.assets = db.value.assets.filter(i => i.id !== id);
                 const closeSubView = () => { subView.value = null; searchQuery.value = ''; };
 
                 onMounted(() => {
-                    const saved = localStorage.getItem('pw_v5');
+                    const saved = localStorage.getItem('pw_v6');
                     if (saved) db.value = JSON.parse(saved);
                 });
 
-                watch(subView, (newV) => { if (newV === 'stock_tw') fetchMasterData(); });
-                watch(db, () => localStorage.setItem('pw_v5', JSON.stringify(db.value)), { deep: true });
+                watch(subView, (nv) => { if (nv === 'stock_tw') fetchMasterData(); });
+                watch(db, () => localStorage.setItem('pw_v6', JSON.stringify(db.value)), { deep: true });
 
                 return { 
-                    view, subView, db, newItem, typeMap, isLoading,
-                    searchQuery, showDropdown, filteredStocks, 
+                    subView, db, newItem, typeMap, isLoading,
+                    searchQuery, showDropdown, filteredStocks, netWorth,
                     selectStock, saveTWStock, getProfit, getProfitPct,
-                    getGroupItems, getGroupTotal, formatNumber, closeSubView
+                    getGroupItems, getGroupTotal, formatNumber, closeSubView, removeItem
                 };
             }
         }).mount('#app');
