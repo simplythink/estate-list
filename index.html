@@ -3,197 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PureWealth Pro | 全方位資產管理</title>
+    <title>PureWealth Pro | 穩定連線版</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         [v-cloak] { display: none; }
-        body { -webkit-tap-highlight-color: transparent; }
-        .loading-ring { border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid #fff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        .loading-ring { border: 3px solid rgba(79, 70, 229, 0.1); border-top: 3px solid #4f46e5; border-radius: 50%; width: 24px; height: 24px; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* 下拉動畫 */
-        .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
-        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen text-gray-900 font-sans">
-    <div id="app" v-cloak class="max-w-md mx-auto min-h-screen flex flex-col relative">
+<body class="bg-slate-50 min-h-screen text-slate-900 font-sans">
+    <div id="app" v-cloak class="max-w-md mx-auto min-h-screen flex flex-col shadow-2xl shadow-indigo-100 bg-white">
         
-        <header class="bg-white/80 backdrop-blur-md sticky top-0 z-30 px-5 py-4 flex justify-between items-center border-b border-gray-100">
+        <header class="bg-white/90 backdrop-blur-md sticky top-0 z-30 px-6 py-4 flex justify-between items-center border-b border-slate-100">
             <div class="flex items-center">
-                <button v-if="subView" @click="subView = null" class="mr-3 p-1 -ml-1 text-indigo-600">
+                <button v-if="subView" @click="subView = null" class="mr-3 p-1 text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                     </svg>
                 </button>
-                <h1 class="text-xl font-black text-indigo-600 tracking-tight">
-                    {{ subView ? typeMap[subView] : 'PureWealth' }}
-                </h1>
+                <h1 class="text-xl font-black text-indigo-600 tracking-tight">{{ subView ? typeMap[subView] : 'PureWealth' }}</h1>
             </div>
-            <div class="flex space-x-2" v-if="!subView">
-                <button @click="syncAllStockPrices" class="p-2 text-indigo-600 bg-indigo-50 rounded-full active:scale-95 transition-all" :disabled="isLoading">
-                    <svg v-if="!isLoading" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                    </svg>
-                    <div v-else class="loading-ring !border-t-indigo-600 !w-4 !h-4"></div>
-                </button>
-                <button @click="exportData" class="p-2 text-gray-400 hover:text-indigo-600 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-                </button>
-            </div>
+            <button v-if="!subView" @click="syncAllStockPrices" :disabled="isLoading" class="p-2 bg-indigo-50 text-indigo-600 rounded-full active:scale-90 transition-all">
+                <div v-if="isLoading" class="loading-ring w-5 h-5"></div>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                </svg>
+            </button>
         </header>
 
-        <main class="flex-1 p-5 overflow-x-hidden">
+        <main class="flex-1 p-6 overflow-x-hidden">
             <div v-if="view === 'assets' && !subView" class="space-y-6">
-                <section class="bg-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-indigo-100 relative overflow-hidden">
+                <section class="bg-indigo-600 rounded-[2rem] p-7 text-white shadow-xl shadow-indigo-200 relative overflow-hidden">
                     <div class="relative z-10">
-                        <p class="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-1">Estimated Net Worth</p>
+                        <p class="text-indigo-200 text-xs font-bold uppercase tracking-[0.2em] mb-1">Total Net Worth</p>
                         <h2 class="text-4xl font-black tracking-tight">${{ formatNumber(netWorth) }}</h2>
-                        <div class="flex mt-6 gap-3">
-                            <div class="bg-white/10 px-3 py-2 rounded-xl flex-1 text-center">
-                                <p class="text-[10px] text-indigo-200 uppercase font-bold">Assets</p>
-                                <p class="font-bold text-sm text-white">${{ formatShortNumber(totalAssets) }}</p>
+                        <div class="flex mt-8 gap-4">
+                            <div class="bg-white/10 backdrop-blur-sm p-3 rounded-2xl flex-1 border border-white/10">
+                                <p class="text-[10px] text-indigo-200 uppercase font-bold mb-1">Assets</p>
+                                <p class="font-bold text-base">${{ formatShortNumber(totalAssets) }}</p>
                             </div>
-                            <div class="bg-black/10 px-3 py-2 rounded-xl flex-1 text-center">
-                                <p class="text-[10px] text-indigo-200 uppercase font-bold">Debts</p>
-                                <p class="font-bold text-sm text-red-300">-${{ formatShortNumber(totalLiabilities) }}</p>
+                            <div class="bg-slate-900/20 backdrop-blur-sm p-3 rounded-2xl flex-1 border border-white/5">
+                                <p class="text-[10px] text-indigo-200 uppercase font-bold mb-1">Debts</p>
+                                <p class="font-bold text-base text-rose-300">-${{ formatShortNumber(totalLiabilities) }}</p>
                             </div>
                         </div>
                     </div>
-                    <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
                 </section>
 
-                <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center">
-                    <h3 class="text-gray-400 font-bold text-xs uppercase tracking-wider mb-6 w-full">Asset Allocation</h3>
-                    <div class="w-52 h-52 relative">
-                        <canvas id="assetChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 gap-3">
+                <div class="grid grid-cols-1 gap-4">
                     <button v-for="(name, type) in typeMap" :key="type" @click="subView = type" 
-                        class="bg-white p-4 rounded-2xl flex justify-between items-center active:bg-indigo-50 transition-all shadow-sm border border-gray-50">
+                        class="bg-white p-5 rounded-3xl flex justify-between items-center border border-slate-100 shadow-sm hover:border-indigo-100 active:bg-indigo-50/30 transition-all">
                         <div class="flex items-center">
-                            <div class="w-10 h-10 rounded-xl mr-4 flex items-center justify-center font-bold" :style="{backgroundColor: typeColors[type] + '20', color: typeColors[type]}">
-                                {{ type === 'stock_tw' ? 'TW' : '●' }}
+                            <div class="w-12 h-12 rounded-2xl mr-4 flex items-center justify-center text-lg shadow-inner" :style="{backgroundColor: typeColors[type] + '15', color: typeColors[type]}">
+                                <span v-if="type === 'stock_tw'" class="text-xs font-black">台股</span>
+                                <span v-else>●</span>
                             </div>
                             <div class="text-left">
-                                <p class="font-bold text-sm text-gray-800">{{ name }}</p>
-                                <p class="text-[10px] text-gray-400 font-medium uppercase">{{ getCount(type) }} 項目</p>
+                                <p class="font-bold text-slate-800">{{ name }}</p>
+                                <p class="text-[11px] text-slate-400 font-bold uppercase tracking-tighter">{{ getCount(type) }} 個項目</p>
                             </div>
                         </div>
-                        <div class="flex items-center">
-                            <span class="font-bold text-sm mr-2" :class="isLiability(type) ? 'text-red-500' : 'text-gray-700'">
+                        <div class="text-right flex items-center">
+                            <span class="font-black text-slate-700 mr-2" :class="{'text-rose-500': isLiability(type)}">
                                 {{ isLiability(type) ? '-' : '' }}${{ formatNumber(getGroupTotal(type)) }}
                             </span>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-gray-300">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                            </svg>
                         </div>
                     </button>
                 </div>
             </div>
 
             <div v-if="subView" class="space-y-6">
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-                    <h3 class="font-black text-sm text-gray-800 mb-4 flex items-center">
-                        新增 {{ typeMap[subView] }}
-                        <span v-if="subView === 'stock_tw'" class="ml-2 text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full uppercase tracking-tighter">Auto-Fetch</span>
-                    </h3>
+                <div class="bg-indigo-50/50 p-6 rounded-[2rem] border border-indigo-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-black text-slate-800">新增{{ typeMap[subView] }}</h3>
+                        <span v-if="subView === 'stock_tw'" class="text-[10px] font-bold text-indigo-500 bg-white px-2 py-1 rounded-lg border border-indigo-100 shadow-sm">自動抓取已就緒</span>
+                    </div>
                     
-                    <div v-if="subView === 'stock_tw'" class="grid grid-cols-2 gap-3">
-                        <input v-model="newItem.symbol" placeholder="代號 (例: 0050)" class="col-span-1 bg-gray-50 border-0 p-3 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500">
-                        <input v-model.number="newItem.shares" type="number" inputmode="numeric" placeholder="持有股數" class="col-span-1 bg-gray-50 border-0 p-3 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500">
-                        <button @click="addTWStock" :disabled="isLoading" class="col-span-2 bg-indigo-600 text-white font-bold py-3 rounded-2xl shadow-lg active:scale-95 transition-all flex justify-center items-center">
-                            <span v-if="!isLoading">確認新增標的</span>
-                            <div v-else class="loading-ring"></div>
-                        </button>
-                    </div>
-
-                    <div v-else class="space-y-3">
-                        <input v-model="newItem.name" placeholder="項目名稱" class="w-full bg-gray-50 border-0 p-3 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500">
-                        <input v-model.number="newItem.value" type="number" inputmode="numeric" placeholder="金額 / 現值" class="w-full bg-gray-50 border-0 p-3 rounded-2xl text-lg font-bold focus:ring-2 focus:ring-indigo-500">
-                        <button @click="addItem('assets')" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-2xl active:scale-95 transition-all">確認新增</button>
-                    </div>
-                </div>
-
-                <div class="space-y-2">
-                    <h3 class="text-gray-400 font-bold text-xs uppercase tracking-wider ml-2">項目清單</h3>
-                    <div v-if="getGroupItems(subView).length > 0" class="space-y-3">
-                        <div v-for="item in getGroupItems(subView)" :key="item.id" class="bg-white px-5 py-4 rounded-2xl flex justify-between items-center shadow-sm border border-gray-50">
-                            <div>
-                                <p class="font-bold text-sm text-gray-800">{{ item.name }}</p>
-                                <p v-if="item.symbol" class="text-[10px] text-gray-400 font-medium">
-                                    {{ item.symbol }} • {{ formatNumber(item.shares) }} 股 • ${{ item.currentPrice }}
-                                </p>
-                            </div>
-                            <div class="flex items-center space-x-4">
-                                <span class="font-black text-sm text-gray-700">${{ formatNumber(item.value) }}</span>
-                                <button @click="removeItem('assets', item.id)" class="text-gray-200 hover:text-red-500 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                                </button>
-                            </div>
+                    <div v-if="subView === 'stock_tw'" class="flex flex-col gap-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <input v-model="newItem.symbol" placeholder="代號 (例: 0050)" class="bg-white border-0 p-4 rounded-2xl text-sm font-bold shadow-sm focus:ring-2 focus:ring-indigo-500">
+                            <input v-model.number="newItem.shares" type="number" placeholder="股數" class="bg-white border-0 p-4 rounded-2xl text-sm font-bold shadow-sm focus:ring-2 focus:ring-indigo-500">
                         </div>
-                    </div>
-                    <div v-else class="text-center py-12 text-gray-300 text-sm italic">尚無資料</div>
-                </div>
-            </div>
-
-            <div v-if="view === 'ledger'" class="space-y-6">
-                <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                    <h3 class="text-gray-400 font-bold text-xs uppercase tracking-wider mb-6">Cash Flow Analysis</h3>
-                    <div class="w-full h-40 relative">
-                        <canvas id="ledgerChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-                    <div class="flex bg-gray-100 p-1 rounded-2xl mb-4">
-                        <button @click="newItem.category = 'expense'" :class="newItem.category === 'expense' ? 'bg-white text-red-500 shadow-sm' : 'text-gray-400'" class="flex-1 py-2 rounded-xl text-xs font-bold transition-all">支出</button>
-                        <button @click="newItem.category = 'income'" :class="newItem.category === 'income' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-400'" class="flex-1 py-2 rounded-xl text-xs font-bold transition-all">收入</button>
-                    </div>
-                    <div class="flex gap-2">
-                        <input v-model="newItem.name" placeholder="說明" class="flex-1 bg-gray-50 border-0 p-3 rounded-2xl text-sm">
-                        <input v-model.number="newItem.value" type="number" placeholder="金額" class="w-24 bg-gray-50 border-0 p-3 rounded-2xl font-bold text-center">
-                        <button @click="addItem('ledger')" class="bg-indigo-600 text-white p-3 rounded-2xl shadow-lg active:scale-90 transition-all">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                        <button @click="addTWStock" :disabled="isLoading" class="bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg shadow-indigo-100 active:scale-95 transition-all flex justify-center items-center">
+                            <span v-if="!isLoading">確認新增</span>
+                            <div v-else class="loading-ring border-t-white"></div>
                         </button>
                     </div>
+
+                    <div v-else class="flex flex-col gap-3">
+                        <input v-model="newItem.name" placeholder="名稱" class="bg-white border-0 p-4 rounded-2xl text-sm font-bold shadow-sm">
+                        <input v-model.number="newItem.value" type="number" placeholder="金額" class="bg-white border-0 p-4 rounded-2xl text-lg font-black shadow-sm">
+                        <button @click="addItem('assets')" class="bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all">儲存資產</button>
+                    </div>
                 </div>
 
-                <div class="space-y-2">
-                    <h3 class="text-gray-400 font-bold text-xs uppercase tracking-wider ml-2">Recent History</h3>
-                    <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-50 divide-y divide-gray-50">
-                        <div v-for="item in db.ledger" :key="item.id" class="px-5 py-4 flex justify-between items-center active:bg-gray-50">
-                            <div>
-                                <p class="font-bold text-sm text-gray-800">{{ item.name }}</p>
-                                <p class="text-[10px] text-gray-400">{{ item.date }}</p>
-                            </div>
-                            <div class="flex items-center space-x-3">
-                                <span :class="item.category === 'income' ? 'text-green-600' : 'text-red-500'" class="font-black text-sm">
-                                    {{ item.category === 'income' ? '+' : '-' }}${{ formatNumber(item.value) }}
-                                </span>
-                                <button @click="removeItem('ledger', item.id)" class="text-gray-200">✕</button>
-                            </div>
+                <div class="space-y-3">
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest px-2">現有資產</h4>
+                    <div v-for="item in getGroupItems(subView)" :key="item.id" class="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-sm flex justify-between items-center group">
+                        <div class="flex-1">
+                            <p class="font-bold text-slate-800">{{ item.name }}</p>
+                            <p v-if="item.symbol" class="text-[11px] font-bold text-slate-400 mt-0.5">
+                                {{ item.symbol }} • {{ formatNumber(item.shares) }} 股 • ${{ item.currentPrice }}
+                            </p>
+                        </div>
+                        <div class="text-right flex items-center gap-4">
+                            <span class="font-black text-slate-800">${{ formatNumber(item.value) }}</span>
+                            <button @click="removeItem('assets', item.id)" class="text-slate-200 hover:text-rose-500 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm3 10.5a.75.75 0 000-1.5H9a.75.75 0 000 1.5h6z" clip-rule="evenodd" /></svg>
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
 
-        <nav class="bg-white/90 backdrop-blur-md border-t border-gray-100 px-12 py-5 flex justify-around items-center sticky bottom-0 z-30">
-            <button @click="view = 'assets'; subView = null" :class="view === 'assets' ? 'text-indigo-600 scale-110' : 'text-gray-300'" class="transition-all duration-300">
+        <nav class="bg-white/80 backdrop-blur-md border-t border-slate-100 px-12 py-6 flex justify-around items-center">
+            <button @click="view = 'assets'; subView = null" :class="view === 'assets' ? 'text-indigo-600' : 'text-slate-300'" class="transition-transform active:scale-90">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8"><path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" /><path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" /></svg>
             </button>
-            <button @click="view = 'ledger'; subView = null" :class="view === 'ledger' ? 'text-indigo-600 scale-110' : 'text-gray-300'" class="transition-all duration-300">
+            <div class="w-px h-6 bg-slate-100"></div>
+            <button @click="view = 'ledger'; subView = null" :class="view === 'ledger' ? 'text-indigo-600' : 'text-slate-300'" class="transition-transform active:scale-90">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8"><path fill-rule="evenodd" d="M1.5 4.875C1.5 3.839 2.34 3 3.375 3h17.25c1.035 0 1.875.84 1.875 1.875v14.25c0 1.035-.84 1.875-1.875 1.875H3.375A1.875 1.875 0 011.5 19.125V4.875zM11.25 12a2.25 2.25 0 114.5 0 2.25 2.25 0 01-4.5 0z" clip-rule="evenodd" /></svg>
             </button>
         </nav>
     </div>
 
     <script>
-        const { createApp, ref, computed, watch, onMounted, nextTick } = Vue;
+        const { createApp, ref, computed, onMounted, watch } = Vue;
 
         createApp({
             setup() {
@@ -201,85 +140,62 @@
                 const subView = ref(null);
                 const isLoading = ref(false);
                 const db = ref({ assets: [], ledger: [] });
+                const newItem = ref({ symbol: '', shares: null, name: '', value: null });
 
-                const typeMap = {
-                    cash: '現金存款', stock_tw: '台股投資', stock_us: '美股證券',
-                    real_estate: '不動產', loan: '債務借貸', credit_card: '信用卡額度'
+                const typeMap = { cash: '儲蓄與現金', stock_tw: '台股/ETF', stock_us: '美股證券', loan: '債務借貸' };
+                const typeColors = { cash: '#4F46E5', stock_tw: '#10B981', stock_us: '#8B5CF6', loan: '#F43F5E' };
+
+                // 代理伺服器 URL - 使用 AllOrigins 繞過 CORS
+                const proxyUrl = (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                const API_STOCKS = 'https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL';
+                const API_ETFS = 'https://openapi.twse.com.tw/v1/exchangeReport/ETF_DAY_ALL';
+
+                let apiCache = null;
+
+                const fetchStockData = async () => {
+                    if (apiCache) return apiCache;
+                    try {
+                        const [sRes, eRes] = await Promise.all([
+                            fetch(proxyUrl(API_STOCKS)).then(r => r.json()),
+                            fetch(proxyUrl(API_ETFS)).then(r => r.json())
+                        ]);
+                        
+                        // AllOrigins 會把結果放在 .contents 字串內
+                        const stocks = JSON.parse(sRes.contents);
+                        const etfs = JSON.parse(eRes.contents);
+                        
+                        apiCache = [...stocks, ...etfs].map(i => ({
+                            id: (i.Code || i.ID || "").trim(),
+                            name: i.Name || i.ItemName || "",
+                            price: parseFloat(String(i.ClosingPrice || i.TradePrice || "0").replace(/,/g, ''))
+                        }));
+                        return apiCache;
+                    } catch (e) {
+                        throw new Error("無法繞過證交所連線限制，請確認網路或稍後再試。");
+                    }
                 };
-
-                const typeColors = {
-                    cash: '#4F46E5', stock_tw: '#10B981', stock_us: '#8B5CF6',
-                    real_estate: '#F59E0B', loan: '#EF4444', credit_card: '#F97316'
-                };
-
-                const newItem = ref({ name: '', value: null, symbol: '', shares: null, category: 'expense' });
-                
-                // 圖表實例儲存
-                let charts = { asset: null, ledger: null };
-
-                // --- TWSE API 核心邏輯 ---
-                const ENDPOINTS = {
-                    STOCK: 'https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL',
-                    ETF: 'https://openapi.twse.com.tw/v1/exchangeReport/ETF_DAY_ALL'
-                };
-                let twseCache = null;
-
-const fetchAllTWData = async () => {
-    if (twseCache) return twseCache;
-
-    // 使用 AllOrigins 代理服務來繞過 CORS 限制
-    const wrapUrl = (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-
-    try {
-        // 我們改用 wrapUrl 包裹原始網址
-        const [sRes, eRes] = await Promise.all([
-            fetch(wrapUrl(ENDPOINTS.STOCK)),
-            fetch(wrapUrl(ENDPOINTS.ETF))
-        ]);
-
-        const sDataRaw = await sRes.json();
-        const eDataRaw = await eRes.json();
-
-        // AllOrigins 會把結果包在 .contents 字串中，需要再 parse 一次
-        const sData = JSON.parse(sDataRaw.contents);
-        const eData = JSON.parse(eDataRaw.contents);
-        
-        twseCache = [...sData, ...eData].map(i => ({
-            code: (i.Code || i.ID || i.item || "").trim(),
-            name: i.Name || i.ItemName || i.item_name,
-            price: parseFloat(String(i.ClosingPrice || i.TradePrice || "0").replace(/,/g, ''))
-        }));
-
-        return twseCache;
-    } catch (e) {
-        console.error("Fetch Error:", e);
-        throw new Error("證交所拒絕連線或 API 維護中。建議稍後再試，或使用代理伺服器。");
-    }
-};
 
                 const addTWStock = async () => {
-                    const sym = newItem.value.symbol?.trim();
-                    const qty = newItem.value.shares;
-                    if (!sym || !qty) return alert("請填寫代號與股數");
-
+                    const symbol = newItem.value.symbol.trim();
+                    if (!symbol || !newItem.value.shares) return alert("請輸入完整資料");
+                    
                     isLoading.value = true;
                     try {
-                        const all = await fetchAllTWData();
-                        const target = all.find(i => i.code === sym);
-                        if (target && !isNaN(target.price)) {
+                        const data = await fetchStockData();
+                        const found = data.find(i => i.id === symbol);
+                        if (found) {
                             db.value.assets.unshift({
                                 id: Date.now(),
                                 type: 'stock_tw',
-                                name: target.name,
-                                symbol: sym,
-                                shares: qty,
-                                currentPrice: target.price,
-                                value: target.price * qty,
-                                date: new Date().toLocaleDateString()
+                                name: found.name,
+                                symbol: symbol,
+                                shares: newItem.value.shares,
+                                currentPrice: found.price,
+                                value: found.price * newItem.value.shares
                             });
                             newItem.value.symbol = ''; newItem.value.shares = null;
                         } else {
-                            alert("找不到該代號，請確認是否為上市股票或 ETF。");
+                            alert("查無代號，請檢查是否輸入正確 (例: 0050)");
                         }
                     } catch (e) { alert(e.message); }
                     finally { isLoading.value = false; }
@@ -288,108 +204,57 @@ const fetchAllTWData = async () => {
                 const syncAllStockPrices = async () => {
                     if (!db.value.assets.some(i => i.type === 'stock_tw')) return;
                     isLoading.value = true;
+                    apiCache = null; 
                     try {
-                        twseCache = null; // 強制刷新
-                        const all = await fetchAllTWData();
+                        const data = await fetchStockData();
                         db.value.assets = db.value.assets.map(item => {
-                            if (item.type === 'stock_tw' && item.symbol) {
-                                const latest = all.find(d => d.code === item.symbol);
-                                if (latest && !isNaN(latest.price)) {
-                                    return { ...item, currentPrice: latest.price, value: latest.price * item.shares };
+                            if (item.type === 'stock_tw') {
+                                const latest = data.find(d => d.id === item.symbol);
+                                if (latest) {
+                                    return { ...item, currentPrice: latest.latest, value: latest.price * item.shares };
                                 }
                             }
                             return item;
                         });
-                        alert("同步成功！");
-                    } catch (e) { alert("更新失敗"); }
+                        alert("同步成功");
+                    } catch (e) { alert("同步失敗"); }
                     finally { isLoading.value = false; }
                 };
 
-                // --- 數據運算 ---
-                const isLiability = (t) => ['loan', 'credit_card'].includes(t);
-                const getGroupItems = (t) => db.value.assets.filter(i => i.type === t);
-                const getGroupTotal = (t) => getGroupItems(t).reduce((s, i) => s + (i.value || 0), 0);
-                const getCount = (t) => getGroupItems(t).length;
-
-                const totalAssets = computed(() => db.value.assets.filter(i => !isLiability(i.type)).reduce((s, i) => s + (i.value || 0), 0));
-                const totalLiabilities = computed(() => db.value.assets.filter(i => isLiability(i.type)).reduce((s, i) => s + (i.value || 0), 0));
-                const netWorth = computed(() => totalAssets.value - totalLiabilities.value);
-
-                // --- 圖表邏輯 ---
-                const initCharts = () => {
-                    nextTick(() => {
-                        // 1. 資產分佈圖
-                        const aCtx = document.getElementById('assetChart');
-                        if (aCtx && view.value === 'assets' && !subView.value) {
-                            const active = Object.keys(typeMap).filter(t => !isLiability(t) && getGroupTotal(t) > 0);
-                            if (charts.asset) charts.asset.destroy();
-                            charts.asset = new Chart(aCtx, {
-                                type: 'doughnut',
-                                data: {
-                                    labels: active.map(t => typeMap[t]),
-                                    datasets: [{ data: active.map(t => getGroupTotal(t)), backgroundColor: active.map(t => typeColors[t]), borderWidth: 0 }]
-                                },
-                                options: { cutout: '75%', plugins: { legend: { display: false } } }
-                            });
-                        }
-                        // 2. 收支流量圖
-                        const lCtx = document.getElementById('ledgerChart');
-                        if (lCtx && view.value === 'ledger') {
-                            const inc = db.value.ledger.filter(i => i.category === 'income').reduce((s, i) => s + i.value, 0);
-                            const exp = db.value.ledger.filter(i => i.category === 'expense').reduce((s, i) => s + i.value, 0);
-                            if (charts.ledger) charts.ledger.destroy();
-                            charts.ledger = new Chart(lCtx, {
-                                type: 'bar',
-                                data: {
-                                    labels: ['收入', '支出'],
-                                    datasets: [{ data: [inc, exp], backgroundColor: ['#10B981', '#EF4444'], borderRadius: 10 }]
-                                },
-                                options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false } } } }
-                            });
-                        }
-                    });
-                };
-
-                // --- 基本操作 ---
                 const addItem = (section) => {
                     if (!newItem.value.name || !newItem.value.value) return;
                     db.value[section].unshift({
-                        id: Date.now(), name: newItem.value.name, value: newItem.value.value,
-                        type: subView.value, category: newItem.value.category, date: new Date().toLocaleDateString()
+                        id: Date.now(), type: subView.value, name: newItem.value.name, value: newItem.value.value
                     });
                     newItem.value.name = ''; newItem.value.value = null;
                 };
 
                 const removeItem = (section, id) => {
-                    if (confirm('確定刪除該項目？')) db.value[section] = db.value[section].filter(i => i.id !== id);
+                    db.value[section] = db.value[section].filter(i => i.id !== id);
                 };
 
+                const isLiability = (t) => t === 'loan';
+                const getGroupItems = (t) => db.value.assets.filter(i => i.type === t);
+                const getGroupTotal = (t) => getGroupItems(t).reduce((s, i) => s + i.value, 0);
+                const getCount = (t) => getGroupItems(t).length;
+                const totalAssets = computed(() => db.value.assets.filter(i => !isLiability(i.type)).reduce((s, i) => s + i.value, 0));
+                const totalLiabilities = computed(() => db.value.assets.filter(i => isLiability(i.type)).reduce((s, i) => s + i.value, 0));
+                const netWorth = computed(() => totalAssets.value - totalLiabilities.value);
                 const formatNumber = (n) => new Intl.NumberFormat().format(Math.round(n || 0));
                 const formatShortNumber = (n) => n >= 10000 ? (n/10000).toFixed(1) + '萬' : n;
 
-                const exportData = () => {
-                    const blob = new Blob([JSON.stringify(db.value)], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a'); a.href = url; a.download = `Wealth_Backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
-                };
-
-                // --- 生命週期 ---
                 onMounted(() => {
-                    const saved = localStorage.getItem('pure_wealth_v3');
+                    const saved = localStorage.getItem('pw_v4');
                     if (saved) db.value = JSON.parse(saved);
-                    initCharts();
                 });
 
-                watch([db, view, subView], () => {
-                    localStorage.setItem('pure_wealth_v3', JSON.stringify(db.value));
-                    initCharts();
-                }, { deep: true });
+                watch(db, () => localStorage.setItem('pw_v4', JSON.stringify(db.value)), { deep: true });
 
-                return {
-                    view, subView, db, typeMap, typeColors, newItem, isLoading,
-                    totalAssets, totalLiabilities, netWorth, isLiability, 
-                    getGroupItems, getGroupTotal, getCount, formatNumber, formatShortNumber,
-                    addItem, addTWStock, syncAllStockPrices, removeItem, exportData
+                return { 
+                    view, subView, db, newItem, typeMap, typeColors, isLoading,
+                    totalAssets, totalLiabilities, netWorth, 
+                    addTWStock, addItem, removeItem, syncAllStockPrices,
+                    getGroupItems, getGroupTotal, getCount, isLiability, formatNumber, formatShortNumber
                 };
             }
         }).mount('#app');
