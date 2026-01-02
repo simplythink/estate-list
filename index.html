@@ -221,28 +221,73 @@
                     }
                 };
 
+                // --- 優化後的台股新增邏輯 ---
                 const addTWStock = async () => {
-                    if (!newItem.value.symbol || !newItem.value.shares) return;
+                    if (!newItem.value.symbol || !newItem.value.shares) {
+                        alert("請輸入完整代號與股數");
+                        return;
+                    }
                     
-                    const stockInfo = await fetchTWStockData(newItem.value.symbol);
-                    if (stockInfo) {
-                        const val = stockInfo.price * newItem.value.shares;
-                        const item = {
-                            id: Date.now(),
-                            type: 'stock_tw',
-                            name: stockInfo.name,
-                            symbol: newItem.value.symbol,
-                            shares: newItem.value.shares,
-                            currentPrice: stockInfo.price,
-                            value: val,
-                            date: new Date().toLocaleDateString()
-                        };
-                        db.value.assets.unshift(item);
-                        newItem.value.symbol = '';
-                        newItem.value.shares = null;
+                    isLoading.value = true;
+                    try {
+                        // 嘗試從證交所抓取最新行情 (包含 ETF)
+                        const response = await fetch(`https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL`);
+                        
+                        if (!response.ok) throw new Error('API 反應異常');
+                        
+                        const data = await response.json();
+                        const symbol = newItem.value.symbol.trim();
+                        const stock = data.find(i => i.Code === symbol);
+                        
+                        if (stock) {
+                            // 抓到資料，自動計算
+                            const price = parseFloat(stock.ClosingPrice.replace(/,/g, ''));
+                            const name = stock.Name;
+                            
+                            saveStockToDB(symbol, name, price, newItem.value.shares);
+                            alert(`成功加入：${name}`);
+                        } else {
+                            // 找不到代號 (或是 API 資料未包含該項目)
+                            handleManualFallback(symbol);
+                        }
+                    } catch (err) {
+                        console.error("API Error:", err);
+                        // 如果因為 CORS 或網路失敗，進入手動模式
+                        handleManualFallback(newItem.value.symbol);
+                    } finally {
+                        isLoading.value = false;
                     }
                 };
-
+                
+                // 輔助函式：當 API 失效時觸發手動輸入
+                const handleManualFallback = (symbol) => {
+                    const manualName = prompt(`自動抓取失敗 (可能是網路或 CORS 限制)。\n請手動輸入 [${symbol}] 的名稱：`, "台灣50");
+                    if (!manualName) return;
+                    
+                    const manualPrice = prompt(`請輸入 [${manualName}] 的當前單價：`, "180.5");
+                    if (!manualPrice) return;
+                    
+                    saveStockToDB(symbol, manualName, parseFloat(manualPrice), newItem.value.shares);
+                };
+                
+                // 輔助函式：儲存到資料庫
+                const saveStockToDB = (symbol, name, price, shares) => {
+                    const val = price * shares;
+                    const item = {
+                        id: Date.now(),
+                        type: 'stock_tw',
+                        name: name,
+                        symbol: symbol,
+                        shares: shares,
+                        currentPrice: price,
+                        value: val,
+                        date: new Date().toLocaleDateString()
+                    };
+                    db.value.assets.unshift(item);
+                    // 清空輸入
+                    newItem.value.symbol = '';
+                    newItem.value.shares = null;
+                };
                 const syncAllStockPrices = async () => {
                     const stockItems = db.value.assets.filter(i => i.type === 'stock_tw' && i.symbol);
                     if (stockItems.length === 0) return;
