@@ -5,6 +5,17 @@ import { useAssets } from './composables/useAssets.js';
 import { useChart } from './composables/useChart.js';
 import { useFixedExpenses } from './composables/useFixedExpenses.js';
 
+// 在支援的瀏覽器上註冊 Service Worker，讓網站可以安裝成 PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('service-worker.js')
+      .catch(() => {
+        // 靜默失敗即可，不影響主流程
+      });
+  });
+}
+
 createApp({
   setup() {
     const view = ref('assets');
@@ -61,6 +72,7 @@ createApp({
       yearlyTotal,
       quarterlyTotal,
       yearlyItems,
+      semiannualItems,
       quarterlyItems,
       bimonthlyItems,
       monthlyItems,
@@ -200,6 +212,16 @@ createApp({
         try {
           const parsed = JSON.parse(saved);
           if (!parsed.fixedExpenses) parsed.fixedExpenses = [];
+          // 清理舊資料中可能出現的無效紀錄，避免 rec 為 null
+          if (Array.isArray(parsed.fixedExpenses)) {
+            parsed.fixedExpenses.forEach((exp) => {
+              if (Array.isArray(exp.records)) {
+                exp.records = exp.records.filter(
+                  (r) => r && r.date && typeof r.amount === 'number',
+                );
+              }
+            });
+          }
           db.value = parsed;
         } catch {
           /* corrupt data – start fresh */
@@ -257,6 +279,7 @@ createApp({
       yearlyTotal,
       quarterlyTotal,
       yearlyItems,
+      semiannualItems,
       quarterlyItems,
       bimonthlyItems,
       monthlyItems,

@@ -1,0 +1,16 @@
+{
+  "name": "Wealthy TaiTai",
+  "short_name": "TaiTai",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "description": "太太的資產與固定開支小幫手。",
+  "icons": [
+    {
+      "src": "icons/wealthy-taitai-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

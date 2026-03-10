@@ -1,8 +1,20 @@
 import { computed } from 'vue';
 import { generateId } from '../utils.js';
 
-const FREQ_LABEL = { yearly: '年繳', quarterly: '季繳', bimonthly: '雙月繳', monthly: '月繳' };
-const FREQ_MONTHS = { yearly: 12, quarterly: 3, bimonthly: 2, monthly: 1 };
+const FREQ_LABEL = {
+  yearly: '年繳',
+  semiannual: '半年繳',
+  quarterly: '季繳',
+  bimonthly: '雙月繳',
+  monthly: '月繳',
+};
+const FREQ_MONTHS = {
+  yearly: 12,
+  semiannual: 6,
+  quarterly: 3,
+  bimonthly: 2,
+  monthly: 1,
+};
 
 export function useFixedExpenses(db) {
   function getItems(filter) {
@@ -59,7 +71,9 @@ export function useFixedExpenses(db) {
       item.records.length = maxRecords;
     }
 
-    const valid = item.records.filter((r) => r.amount > 0);
+    const valid = item.records.filter(
+      (r) => r && typeof r.amount === 'number' && r.amount > 0,
+    );
     item.amount =
       valid.length > 0
         ? Math.round(valid.reduce((s, r) => s + r.amount, 0) / valid.length)
@@ -67,6 +81,7 @@ export function useFixedExpenses(db) {
   }
 
   const yearlyItems = computed(() => getItems('yearly'));
+  const semiannualItems = computed(() => getItems('semiannual'));
   const quarterlyItems = computed(() => getItems('quarterly'));
   const bimonthlyItems = computed(() => getItems('bimonthly'));
   const monthlyItems = computed(() => getItems('monthly'));
@@ -81,6 +96,7 @@ export function useFixedExpenses(db) {
     yearlyTotal,
     quarterlyTotal,
     yearlyItems,
+    semiannualItems,
     quarterlyItems,
     bimonthlyItems,
     monthlyItems,
