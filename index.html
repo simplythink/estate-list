@@ -221,10 +221,10 @@
             <div v-if="view === 'ledger'" class="space-y-6">
 
                 <!-- Summary cards -->
-                <section class="bg-gradient-to-br from-rose-500 to-orange-500 rounded-3xl p-6 text-white shadow-xl shadow-rose-100 relative overflow-hidden">
+                <section class="bg-gradient-to-br from-[#b55b7a] to-[#6f7fa6] rounded-3xl p-6 text-white shadow-xl shadow-rose-100 relative overflow-hidden">
                     <div class="relative z-10">
-                        <p class="text-rose-100 text-xs font-bold uppercase tracking-widest mb-1">固定開支總覽</p>
-                        <h2 class="text-3xl font-black">${{ formatNumber(yearlyTotal) }}<span class="text-base font-bold text-rose-200 ml-1">/ 年</span></h2>
+                        <p class="text-[#f6edf1] text-xs font-bold uppercase tracking-widest mb-1">固定開支總覽</p>
+                        <h2 class="text-3xl font-black">${{ formatNumber(yearlyTotal) }}<span class="text-base font-bold text-[#e9d2dd] ml-1">/ 年</span></h2>
                         <div class="flex mt-5 gap-3">
                             <div class="bg-white/15 px-3 py-2 rounded-xl flex-1 text-center">
                                 <p class="text-[10px] text-rose-200 uppercase font-bold">每月換算</p>
@@ -240,32 +240,66 @@
 
                 <!-- Add new expense -->
                 <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-                    <h3 class="font-black text-sm text-gray-800 mb-4">新增固定開支</h3>
-                    <div class="space-y-3">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-black text-sm text-gray-800">新增固定開支</h3>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] font-bold transition-colors" :class="addExpenseMode === 'fixed' ? 'text-[#b55b7a]' : 'text-gray-300'">固定</span>
+                            <button @click="addExpenseMode = addExpenseMode === 'fixed' ? 'variable' : 'fixed'"
+                                class="relative w-9 h-5 rounded-full transition-colors duration-200"
+                                :class="addExpenseMode === 'variable' ? 'bg-teal-500' : 'bg-gray-300'">
+                                <span class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"
+                                    :class="addExpenseMode === 'variable' ? 'translate-x-4' : ''"></span>
+                            </button>
+                            <span class="text-[10px] font-bold transition-colors" :class="addExpenseMode === 'variable' ? 'text-teal-600' : 'text-gray-300'">浮動</span>
+                        </div>
+                    </div>
+
+                    <!-- Fixed amount mode -->
+                    <div v-if="addExpenseMode === 'fixed'" class="space-y-3">
                         <input v-model="newExpense.name" placeholder="項目名稱（如：管理費、電信費）"
-                            class="w-full bg-gray-50 border-0 p-3 rounded-2xl text-sm focus:ring-2 focus:ring-rose-500">
+                            class="w-full bg-gray-50 border-0 p-3 rounded-2xl text-sm focus:ring-2 focus:ring-[#b55b7a]">
                         <div class="flex gap-3">
                             <input v-model.number="newExpense.amount" type="number" inputmode="numeric" placeholder="金額"
-                                class="flex-1 bg-gray-50 border-0 p-3 rounded-2xl text-lg font-bold focus:ring-2 focus:ring-rose-500 input-no-spinner">
+                                class="flex-1 bg-gray-50 border-0 p-3 rounded-2xl text-lg font-bold focus:ring-2 focus:ring-[#b55b7a] input-no-spinner">
                             <select v-model="newExpense.frequency"
-                                class="bg-gray-50 border-0 p-3 rounded-2xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-rose-500 appearance-none text-center w-28">
+                                class="bg-gray-50 border-0 p-3 rounded-2xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-[#b55b7a] appearance-none text-center w-28">
                                 <option value="monthly">月繳</option>
                                 <option value="quarterly">季繳</option>
                                 <option value="yearly">年繳</option>
                             </select>
                         </div>
                         <button @click="handleAddExpense"
-                            class="w-full bg-rose-500 text-white font-bold py-3 rounded-2xl shadow-lg shadow-rose-100 active:scale-95 transition-all">
+                            class="w-full bg-[#b55b7a] text-white font-bold py-3 rounded-2xl shadow-lg shadow-rose-100 active:scale-95 transition-all">
                             確認新增
+                        </button>
+                    </div>
+
+                    <!-- Variable expense mode -->
+                    <div v-else class="space-y-3">
+                        <p class="text-[11px] text-gray-400 font-medium px-1">適用水電瓦斯等浮動帳單，每期記帳後自動計算月均</p>
+                        <input v-model="newVariableExpense.name" placeholder="項目名稱（如：電費、水費、瓦斯費）"
+                            class="w-full bg-gray-50 border-0 p-3 rounded-2xl text-sm focus:ring-2 focus:ring-teal-500">
+                        <div class="flex gap-3">
+                            <input v-model.number="newVariableExpense.amount" type="number" inputmode="numeric" placeholder="本期金額（選填）"
+                                class="flex-1 bg-gray-50 border-0 p-3 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-teal-500 input-no-spinner">
+                            <select v-model="newVariableExpense.frequency"
+                                class="bg-gray-50 border-0 p-3 rounded-2xl text-sm font-bold text-gray-700 focus:ring-2 focus:ring-teal-500 appearance-none text-center w-28">
+                                <option value="monthly">每月</option>
+                                <option value="bimonthly">每兩月</option>
+                            </select>
+                        </div>
+                        <button @click="handleAddVariableExpense"
+                            class="w-full bg-teal-600 text-white font-bold py-3 rounded-2xl shadow-lg shadow-teal-100 active:scale-95 transition-all">
+                            建立項目
                         </button>
                     </div>
                 </div>
 
                 <!-- Filter tabs -->
                 <div class="flex bg-white p-1 rounded-2xl shadow-sm border border-gray-100">
-                    <button v-for="(label, key) in { all: '全部', yearly: '年繳', quarterly: '季繳', monthly: '月繳' }" :key="key"
+                    <button v-for="(label, key) in { all: '全部', yearly: '年繳', quarterly: '季繳', bimonthly: '雙月繳', monthly: '月繳' }" :key="key"
                         @click="expenseFilter = key"
-                        :class="expenseFilter === key ? 'bg-rose-500 text-white shadow-sm' : 'text-gray-400'"
+                        :class="expenseFilter === key ? 'bg-[#b55b7a] text-white shadow-sm' : 'text-gray-400'"
                         class="flex-1 py-2 rounded-xl text-xs font-bold transition-all">
                         {{ label }}
                     </button>
@@ -288,7 +322,7 @@
                                     <p class="text-[10px] text-gray-400 font-medium">年繳 · 每月約 ${{ formatNumber(Math.round(item.amount / 12)) }}</p>
                                 </div>
                                 <div class="flex items-center space-x-3">
-                                    <span class="font-black text-sm text-rose-500">${{ formatNumber(item.amount) }}</span>
+                                    <span class="font-black text-sm text-[#b55b7a]">${{ formatNumber(item.amount) }}</span>
                                     <button @click="startEditExpense(item)" class="text-indigo-400 hover:text-indigo-600 transition-colors">
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
@@ -305,17 +339,17 @@
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs font-bold text-gray-500 w-12 shrink-0">名稱</span>
                                     <input v-model="editExpenseForm.name"
-                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-rose-500">
+                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-[#b55b7a]">
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs font-bold text-gray-500 w-12 shrink-0">金額</span>
                                     <input v-model.number="editExpenseForm.amount" type="number" inputmode="numeric"
-                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm font-bold focus:ring-2 focus:ring-rose-500">
+                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#b55b7a]">
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs font-bold text-gray-500 w-12 shrink-0">週期</span>
                                     <select v-model="editExpenseForm.frequency"
-                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm font-bold focus:ring-2 focus:ring-rose-500">
+                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#b55b7a]">
                                         <option value="monthly">月繳</option>
                                         <option value="quarterly">季繳</option>
                                         <option value="yearly">年繳</option>
@@ -325,7 +359,7 @@
                                     <button @click="cancelEditExpense"
                                         class="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-500 bg-gray-100 active:scale-95 transition-all">取消</button>
                                     <button @click="saveEditExpense(item)"
-                                        class="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-rose-500 shadow-lg shadow-rose-100 active:scale-95 transition-all">儲存</button>
+                                        class="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-[#b55b7a] shadow-lg shadow-rose-100 active:scale-95 transition-all">儲存</button>
                                 </div>
                             </div>
                         </div>
@@ -349,7 +383,7 @@
                                     <p class="text-[10px] text-gray-400 font-medium">季繳 · 每月約 ${{ formatNumber(Math.round(item.amount / 3)) }}</p>
                                 </div>
                                 <div class="flex items-center space-x-3">
-                                    <span class="font-black text-sm text-rose-500">${{ formatNumber(item.amount) }}</span>
+                                    <span class="font-black text-sm text-[#b55b7a]">${{ formatNumber(item.amount) }}</span>
                                     <button @click="startEditExpense(item)" class="text-indigo-400 hover:text-indigo-600 transition-colors">
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
@@ -366,17 +400,17 @@
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs font-bold text-gray-500 w-12 shrink-0">名稱</span>
                                     <input v-model="editExpenseForm.name"
-                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-rose-500">
+                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-[#b55b7a]">
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs font-bold text-gray-500 w-12 shrink-0">金額</span>
                                     <input v-model.number="editExpenseForm.amount" type="number" inputmode="numeric"
-                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm font-bold focus:ring-2 focus:ring-rose-500">
+                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#b55b7a]">
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span class="text-xs font-bold text-gray-500 w-12 shrink-0">週期</span>
                                     <select v-model="editExpenseForm.frequency"
-                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm font-bold focus:ring-2 focus:ring-rose-500">
+                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#b55b7a]">
                                         <option value="monthly">月繳</option>
                                         <option value="quarterly">季繳</option>
                                         <option value="yearly">年繳</option>
@@ -386,7 +420,78 @@
                                     <button @click="cancelEditExpense"
                                         class="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-500 bg-gray-100 active:scale-95 transition-all">取消</button>
                                     <button @click="saveEditExpense(item)"
-                                        class="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-rose-500 shadow-lg shadow-rose-100 active:scale-95 transition-all">儲存</button>
+                                        class="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-[#b55b7a] shadow-lg shadow-rose-100 active:scale-95 transition-all">儲存</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bimonthly items -->
+                <div v-if="(expenseFilter === 'all' || expenseFilter === 'bimonthly') && bimonthlyItems.length > 0" class="space-y-2">
+                    <div class="flex justify-between items-center px-2">
+                        <h3 class="text-gray-400 font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-teal-400"></span>雙月繳項目
+                        </h3>
+                        <span class="text-xs text-gray-400 font-bold">{{ bimonthlyItems.length }} 項</span>
+                    </div>
+                    <div class="space-y-2">
+                        <div v-for="item in bimonthlyItems" :key="item.id"
+                            class="bg-white px-5 py-4 rounded-2xl shadow-sm border border-gray-50">
+                            <div v-if="editingExpenseId !== item.id">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="font-bold text-sm text-gray-800">
+                                            {{ item.name }}
+                                            <span class="text-[9px] text-teal-600 font-bold px-1.5 py-0.5 bg-teal-50 rounded-full ml-1">浮動</span>
+                                        </p>
+                                        <p class="text-[10px] text-gray-400 font-medium">
+                                            雙月繳 · {{ item.records?.length || 0 }}/6 期 · 月均 ${{ formatNumber(Math.round(item.amount / 2)) }}
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <span class="font-black text-sm text-teal-600">${{ formatNumber(item.amount) }}<span class="text-[10px] font-normal text-gray-400">/期</span></span>
+                                        <button @click="startEditExpense(item)" class="text-indigo-400 hover:text-indigo-600 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                            </svg>
+                                        </button>
+                                        <button @click="removeExpense(item.id)" class="text-gray-300 hover:text-red-400 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-3 flex gap-2">
+                                    <input v-model.number="newRecordAmounts[item.id]" type="number" inputmode="numeric" placeholder="輸入本期帳單金額"
+                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm font-bold focus:ring-2 focus:ring-teal-500 input-no-spinner">
+                                    <button @click="handleAddRecord(item.id)"
+                                        class="px-4 py-2.5 bg-teal-600 text-white text-xs font-bold rounded-xl active:scale-95 transition-all whitespace-nowrap">
+                                        記錄
+                                    </button>
+                                </div>
+                                <div v-if="item.records?.length > 0" class="mt-2 space-y-1 max-h-36 overflow-y-auto">
+                                    <div v-for="(rec, idx) in item.records" :key="idx"
+                                        class="flex justify-between text-[11px] px-2 py-1 rounded-lg"
+                                        :class="idx === 0 ? 'bg-teal-50 text-teal-700' : 'text-gray-400'">
+                                        <span>{{ rec.date }}</span>
+                                        <span class="font-bold">${{ formatNumber(rec.amount) }}</span>
+                                    </div>
+                                </div>
+                                <p v-else class="mt-2 text-center py-2 text-[11px] text-gray-300 italic">尚無帳單紀錄</p>
+                            </div>
+                            <div v-else class="space-y-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-gray-500 w-12 shrink-0">名稱</span>
+                                    <input v-model="editExpenseForm.name"
+                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-teal-500">
+                                </div>
+                                <div class="flex gap-2">
+                                    <button @click="cancelEditExpense"
+                                        class="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-500 bg-gray-100 active:scale-95 transition-all">取消</button>
+                                    <button @click="saveEditExpense(item)"
+                                        class="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-teal-600 shadow-lg shadow-teal-100 active:scale-95 transition-all">儲存</button>
                                 </div>
                             </div>
                         </div>
@@ -404,52 +509,116 @@
                     <div class="space-y-2">
                         <div v-for="item in monthlyItems" :key="item.id"
                             class="bg-white px-5 py-4 rounded-2xl shadow-sm border border-gray-50">
-                            <div v-if="editingExpenseId !== item.id" class="flex justify-between items-center">
-                                <div>
-                                    <p class="font-bold text-sm text-gray-800">{{ item.name }}</p>
-                                    <p class="text-[10px] text-gray-400 font-medium">月繳 · 年共 ${{ formatNumber(item.amount * 12) }}</p>
+
+                            <!-- Variable expense card -->
+                            <template v-if="item.type === 'variable'">
+                                <div v-if="editingExpenseId !== item.id">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <p class="font-bold text-sm text-gray-800">
+                                                {{ item.name }}
+                                                <span class="text-[9px] text-teal-600 font-bold px-1.5 py-0.5 bg-teal-50 rounded-full ml-1">浮動</span>
+                                            </p>
+                                            <p class="text-[10px] text-gray-400 font-medium">
+                                                月繳 · {{ item.records?.length || 0 }}/12 期 · 年共 ${{ formatNumber(item.amount * 12) }}
+                                            </p>
+                                        </div>
+                                        <div class="flex items-center space-x-3">
+                                            <span class="font-black text-sm text-teal-600">${{ formatNumber(item.amount) }}</span>
+                                            <button @click="startEditExpense(item)" class="text-indigo-400 hover:text-indigo-600 transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                                </svg>
+                                            </button>
+                                            <button @click="removeExpense(item.id)" class="text-gray-300 hover:text-red-400 transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 flex gap-2">
+                                        <input v-model.number="newRecordAmounts[item.id]" type="number" inputmode="numeric" placeholder="輸入本期帳單金額"
+                                            class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm font-bold focus:ring-2 focus:ring-teal-500 input-no-spinner">
+                                        <button @click="handleAddRecord(item.id)"
+                                            class="px-4 py-2.5 bg-teal-600 text-white text-xs font-bold rounded-xl active:scale-95 transition-all whitespace-nowrap">
+                                            記錄
+                                        </button>
+                                    </div>
+                                    <div v-if="item.records?.length > 0" class="mt-2 space-y-1 max-h-36 overflow-y-auto">
+                                        <div v-for="(rec, idx) in item.records" :key="idx"
+                                            class="flex justify-between text-[11px] px-2 py-1 rounded-lg"
+                                            :class="idx === 0 ? 'bg-teal-50 text-teal-700' : 'text-gray-400'">
+                                            <span>{{ rec.date }}</span>
+                                            <span class="font-bold">${{ formatNumber(rec.amount) }}</span>
+                                        </div>
+                                    </div>
+                                    <p v-else class="mt-2 text-center py-2 text-[11px] text-gray-300 italic">尚無帳單紀錄</p>
                                 </div>
-                                <div class="flex items-center space-x-3">
-                                    <span class="font-black text-sm text-rose-500">${{ formatNumber(item.amount) }}</span>
-                                    <button @click="startEditExpense(item)" class="text-indigo-400 hover:text-indigo-600 transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                                        </svg>
-                                    </button>
-                                    <button @click="removeExpense(item.id)" class="text-gray-300 hover:text-red-400 transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
+                                <div v-else class="space-y-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-gray-500 w-12 shrink-0">名稱</span>
+                                        <input v-model="editExpenseForm.name"
+                                            class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-teal-500">
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button @click="cancelEditExpense"
+                                            class="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-500 bg-gray-100 active:scale-95 transition-all">取消</button>
+                                        <button @click="saveEditExpense(item)"
+                                            class="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-teal-600 shadow-lg shadow-teal-100 active:scale-95 transition-all">儲存</button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div v-else class="space-y-3">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs font-bold text-gray-500 w-12 shrink-0">名稱</span>
-                                    <input v-model="editExpenseForm.name"
-                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-rose-500">
+                            </template>
+
+                            <!-- Fixed expense card -->
+                            <template v-else>
+                                <div v-if="editingExpenseId !== item.id" class="flex justify-between items-center">
+                                    <div>
+                                        <p class="font-bold text-sm text-gray-800">{{ item.name }}</p>
+                                        <p class="text-[10px] text-gray-400 font-medium">月繳 · 年共 ${{ formatNumber(item.amount * 12) }}</p>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <span class="font-black text-sm text-[#b55b7a]">${{ formatNumber(item.amount) }}</span>
+                                        <button @click="startEditExpense(item)" class="text-indigo-400 hover:text-indigo-600 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                            </svg>
+                                        </button>
+                                        <button @click="removeExpense(item.id)" class="text-gray-300 hover:text-red-400 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs font-bold text-gray-500 w-12 shrink-0">金額</span>
-                                    <input v-model.number="editExpenseForm.amount" type="number" inputmode="numeric"
-                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm font-bold focus:ring-2 focus:ring-rose-500">
+                                <div v-else class="space-y-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-gray-500 w-12 shrink-0">名稱</span>
+                                        <input v-model="editExpenseForm.name"
+                                            class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-[#b55b7a]">
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-gray-500 w-12 shrink-0">金額</span>
+                                        <input v-model.number="editExpenseForm.amount" type="number" inputmode="numeric"
+                                            class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#b55b7a]">
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-gray-500 w-12 shrink-0">週期</span>
+                                        <select v-model="editExpenseForm.frequency"
+                                            class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#b55b7a]">
+                                            <option value="monthly">月繳</option>
+                                            <option value="quarterly">季繳</option>
+                                            <option value="yearly">年繳</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button @click="cancelEditExpense"
+                                            class="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-500 bg-gray-100 active:scale-95 transition-all">取消</button>
+                                        <button @click="saveEditExpense(item)"
+                                            class="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-[#b55b7a] shadow-lg shadow-rose-100 active:scale-95 transition-all">儲存</button>
+                                    </div>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs font-bold text-gray-500 w-12 shrink-0">週期</span>
-                                    <select v-model="editExpenseForm.frequency"
-                                        class="flex-1 bg-gray-50 border-0 p-2.5 rounded-xl text-sm font-bold focus:ring-2 focus:ring-rose-500">
-                                        <option value="monthly">月繳</option>
-                                        <option value="quarterly">季繳</option>
-                                        <option value="yearly">年繳</option>
-                                    </select>
-                                </div>
-                                <div class="flex gap-2">
-                                    <button @click="cancelEditExpense"
-                                        class="flex-1 py-2.5 rounded-xl text-sm font-bold text-gray-500 bg-gray-100 active:scale-95 transition-all">取消</button>
-                                    <button @click="saveEditExpense(item)"
-                                        class="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-rose-500 shadow-lg shadow-rose-100 active:scale-95 transition-all">儲存</button>
-                                </div>
-                            </div>
+                            </template>
                         </div>
                     </div>
                 </div>

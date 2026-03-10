@@ -1,4 +1,4 @@
-import { createApp, ref, watch, onMounted, nextTick } from 'vue';
+import { createApp, ref, computed, watch, onMounted, nextTick } from 'vue';
 import { STORAGE_KEY, ASSET_TYPES, ASSET_COLORS } from './constants.js';
 import { formatNumber, formatShortNumber } from './utils.js';
 import { useAssets } from './composables/useAssets.js';
@@ -27,6 +27,15 @@ createApp({
     const editingExpenseId = ref(null);
     const editExpenseForm = ref({});
 
+    // Variable expense mode
+    const addExpenseMode = ref('fixed');
+    const newVariableExpense = ref({
+      name: '',
+      frequency: 'monthly',
+      amount: null,
+    });
+    const newRecordAmounts = ref({});
+
     const {
       isLiability,
       getGroupItems,
@@ -47,13 +56,16 @@ createApp({
       addExpense,
       removeExpense,
       updateExpense,
+      addRecord,
       monthlyTotal,
       yearlyTotal,
       quarterlyTotal,
       yearlyItems,
       quarterlyItems,
+      bimonthlyItems,
       monthlyItems,
       FREQ_LABEL,
+      FREQ_MONTHS,
     } = useFixedExpenses(db);
 
     const { updateChart } = useChart(
@@ -131,6 +143,8 @@ createApp({
         name: item.name,
         amount: item.amount,
         frequency: item.frequency,
+        type: item.type || 'fixed',
+        records: item.records ? [...item.records] : [],
       };
     }
 
@@ -140,11 +154,42 @@ createApp({
     }
 
     function saveEditExpense(item) {
-      const { name, amount, frequency } = editExpenseForm.value;
-      if (!name || !amount) return;
-      updateExpense(item.id, { name, amount, frequency });
+      const form = editExpenseForm.value;
+      if (!form.name) return;
+      if (form.type === 'variable') {
+        updateExpense(item.id, { name: form.name });
+      } else {
+        if (!form.amount) return;
+        updateExpense(item.id, {
+          name: form.name,
+          amount: form.amount,
+          frequency: form.frequency,
+        });
+      }
       editingExpenseId.value = null;
       editExpenseForm.value = {};
+    }
+
+    // --- Variable expense helpers ---
+
+    function handleAddVariableExpense() {
+      const { name, frequency, amount } = newVariableExpense.value;
+      if (!name) return;
+      const records = [];
+      let perPeriodAvg = 0;
+      if (amount && amount > 0) {
+        records.push({ amount, date: new Date().toISOString().slice(0, 10) });
+        perPeriodAvg = amount;
+      }
+      addExpense({ name, amount: perPeriodAvg, frequency, type: 'variable', records });
+      newVariableExpense.value = { name: '', frequency, amount: null };
+    }
+
+    function handleAddRecord(itemId) {
+      const amount = newRecordAmounts.value[itemId];
+      if (!amount || amount <= 0) return;
+      addRecord(itemId, amount);
+      newRecordAmounts.value[itemId] = null;
     }
 
     // --- Persistence & chart sync ---
@@ -213,8 +258,16 @@ createApp({
       quarterlyTotal,
       yearlyItems,
       quarterlyItems,
+      bimonthlyItems,
       monthlyItems,
       FREQ_LABEL,
+      // Variable expense mode
+      addExpenseMode,
+      newVariableExpense,
+      handleAddVariableExpense,
+      newRecordAmounts,
+      handleAddRecord,
+      FREQ_MONTHS,
     };
   },
 }).mount('#app');
