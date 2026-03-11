@@ -68,6 +68,7 @@ createApp({
       removeExpense,
       updateExpense,
       addRecord,
+      removeRecord,
       monthlyTotal,
       yearlyTotal,
       quarterlyTotal,
@@ -290,6 +291,7 @@ createApp({
       handleAddVariableExpense,
       newRecordAmounts,
       handleAddRecord,
+      removeRecord,
       FREQ_MONTHS,
     };
   },

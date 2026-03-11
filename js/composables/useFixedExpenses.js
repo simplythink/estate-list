@@ -80,6 +80,21 @@ export function useFixedExpenses(db) {
         : 0;
   }
 
+  function removeRecord(id, index) {
+    const list = db.value.fixedExpenses || [];
+    const item = list.find((i) => i.id === id);
+    if (!item || !Array.isArray(item.records)) return;
+    item.records.splice(index, 1);
+
+    const valid = item.records.filter(
+      (r) => r && typeof r.amount === 'number' && r.amount > 0,
+    );
+    item.amount =
+      valid.length > 0
+        ? Math.round(valid.reduce((s, r) => s + r.amount, 0) / valid.length)
+        : 0;
+  }
+
   const yearlyItems = computed(() => getItems('yearly'));
   const semiannualItems = computed(() => getItems('semiannual'));
   const quarterlyItems = computed(() => getItems('quarterly'));
@@ -92,6 +107,7 @@ export function useFixedExpenses(db) {
     removeExpense,
     updateExpense,
     addRecord,
+    removeRecord,
     monthlyTotal,
     yearlyTotal,
     quarterlyTotal,
