@@ -5,8 +5,8 @@ import { useAssets } from './composables/useAssets.js';
 import { useChart } from './composables/useChart.js';
 import { useFixedExpenses } from './composables/useFixedExpenses.js';
 
-// 在支援的瀏覽器上註冊 Service Worker，讓網站可以安裝成 PWA
-if ('serviceWorker' in navigator) {
+// 在支援的瀏覽器上註冊 Service Worker（排除 localhost 開發環境）
+if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('service-worker.js')
